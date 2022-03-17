@@ -105,19 +105,7 @@ function Test-SpotifyVersion
   }
 }
 
-Write-Host @'
-*****************
-@mrpond message:
-#Thailand #ThaiProtest #ThailandProtest #freeYOUTH
-Please retweet these hashtag, help me stop dictator government!
-*****************
-'@
 
-Write-Host @'
-*****************
-Authors: @Nuzair46, @KUTlime
-*****************
-'@
 
 $spotifyDirectory = Join-Path -Path $env:APPDATA -ChildPath 'Spotify'
 $spotifyExecutable = Join-Path -Path $spotifyDirectory -ChildPath 'Spotify.exe'
@@ -357,10 +345,4 @@ Write-Host 'Patching Complete, starting Spotify...'
 Start-Process -WorkingDirectory $spotifyDirectory -FilePath $spotifyExecutable
 Write-Host 'Done.'
 
-Write-Host @'
-*****************
-@mrpond message:
-#Thailand #ThaiProtest #ThailandProtest #freeYOUTH
-Please retweet these hashtag, help me stop dictator government!
-*****************
-'@
+
