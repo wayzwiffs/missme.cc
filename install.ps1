@@ -113,7 +113,7 @@ $spotifyApps = Join-Path -Path $spotifyDirectory -ChildPath 'Apps'
 
 [System.Version] $actualSpotifyClientVersion = (Get-ChildItem -LiteralPath $spotifyExecutable -ErrorAction:SilentlyContinue).VersionInfo.ProductVersionRaw
 
-Write-Host "Stopping Spotify...`n"
+
 Stop-Process -Name Spotify
 Stop-Process -Name SpotifyWebHelper
 
@@ -124,16 +124,16 @@ if ($PSVersionTable.PSVersion.Major -ge 7)
 
 if (Get-AppxPackage -Name SpotifyAB.SpotifyMusic)
 {
-  Write-Host "The Microsoft Store version of Spotify has been detected which is not supported.`n"
+  
 
   if ($UninstallSpotifyStoreEdition)
   {
-    Write-Host "Uninstalling Spotify.`n"
+    
     Get-AppxPackage -Name SpotifyAB.SpotifyMusic | Remove-AppxPackage
   }
   else
   {
-    Read-Host "Exiting...`nPress any key to exit..."
+    
     exit
   }
 }
@@ -142,7 +142,7 @@ Push-Location -LiteralPath $env:TEMP
 try
 {
   # Unique directory name based on time
-  New-Item -Type Directory -Name "BlockTheSpot-$(Get-Date -UFormat '%Y-%m-%d_%H-%M-%S')" |
+  New-Item -Type Directory -Name "missme.cc-$(Get-Date -UFormat '%Y-%m-%d_%H-%M-%S')" |
   Convert-Path |
   Set-Location
 }
@@ -153,7 +153,7 @@ catch
   exit
 }
 
-Write-Host "Downloading latest patch (chrome_elf.zip)...`n"
+
 $elfPath = Join-Path -Path $PWD -ChildPath 'chrome_elf.zip'
 try
 {
@@ -182,7 +182,7 @@ if (-not $UpdateSpotify -and $unsupportedClientVersion)
 
 if (-not $spotifyInstalled -or $UpdateSpotify -or $unsupportedClientVersion)
 {
-  Write-Host 'Downloading the latest Spotify full setup, please wait...'
+  
   $spotifySetupFilePath = Join-Path -Path $PWD -ChildPath 'SpotifyFullSetup.exe'
   try
   {
@@ -199,11 +199,11 @@ if (-not $spotifyInstalled -or $UpdateSpotify -or $unsupportedClientVersion)
 
   [System.Security.Principal.WindowsPrincipal] $principal = [System.Security.Principal.WindowsIdentity]::GetCurrent()
   $isUserAdmin = $principal.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)
-  Write-Host 'Running installation...'
+  
   if ($isUserAdmin)
   {
     Write-Host
-    Write-Host 'Creating scheduled task...'
+    
     $apppath = 'powershell.exe'
     $taskname = 'Spotify install'
     $action = New-ScheduledTaskAction -Execute $apppath -Argument "-NoLogo -NoProfile -Command & `'$spotifySetupFilePath`'"
@@ -249,7 +249,7 @@ if (-not $spotifyInstalled -or $UpdateSpotify -or $unsupportedClientVersion)
   }
 
 
-  Write-Host 'Stopping Spotify...Again'
+  
 
   Stop-Process -Name Spotify
   Stop-Process -Name SpotifyWebHelper
@@ -262,7 +262,7 @@ if ((Test-Path $elfDllBackFilePath) -eq $false)
   Move-Item -LiteralPath "$elfBackFilePath" -Destination "$elfDllBackFilePath" | Write-Verbose
 }
 
-Write-Host 'Patching Spotify...'
+
 $patchFiles = (Join-Path -Path $PWD -ChildPath 'chrome_elf.dll'), (Join-Path -Path $PWD -ChildPath 'config.ini')
 
 Copy-Item -LiteralPath $patchFiles -Destination "$spotifyDirectory"
@@ -295,11 +295,11 @@ if ($RemoveAdPlaceholder)
     Copy-Item -LiteralPath $xpuiUnpackedPath -Destination "$xpuiUnpackedPath.bak"
     $xpuiContents = Get-Content -LiteralPath $xpuiUnpackedPath -Raw
 
-    Write-Host 'Spicetify detected - You may need to reinstall BTS after running "spicetify apply".';
+    
   }
   else
   {
-    Write-Host 'Could not find xpui.js, please open an issue on the BlockTheSpot repository.'
+    
   }
 
   if ($xpuiContents)
@@ -332,7 +332,7 @@ if ($RemoveAdPlaceholder)
 }
 else
 {
-  Write-Host "Won't remove ad placeholder and upgrade button.`n"
+  
 }
 
 $tempDirectory = $PWD
@@ -340,7 +340,7 @@ Pop-Location
 
 Remove-Item -LiteralPath $tempDirectory -Recurse
 
-Write-Host 'Patching Complete, starting Spotify...'
+Write-Host 'done!!! thank you for using missme.cc!'
 
 Start-Process -WorkingDirectory $spotifyDirectory -FilePath $spotifyExecutable
 Write-Host 'Done.'
