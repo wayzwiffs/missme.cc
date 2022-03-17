@@ -1,24 +1,19 @@
 param (
   [Parameter()]
   [switch]
-  $UninstallSpotifyStoreEdition = (Read-Host -Prompt 'rate missme.cc out of 10?') -eq 'y',
+  $UninstallSpotifyStoreEdition = (Read-Host -Prompt 'Uninstall Spotify Windows Store edition if it exists (Y/N)') -eq 'y',
   [Parameter()]
   [switch]
   $UpdateSpotify,
   [Parameter()]
   [switch]
-  $RemoveAdPlaceholder = (Read-Host -Prompt 'what can missme.cc improve on?') -eq 'y'
+  $RemoveAdPlaceholder = (Read-Host -Prompt 'Optional - Remove ad placeholder and upgrade button. (Y/N)') -eq 'y'
 )
-
-Write-Host @'
-Thank you for the report, lets begin!
-'@
 
 # Ignore errors from `Stop-Process`
 $PSDefaultParameterValues['Stop-Process:ErrorAction'] = [System.Management.Automation.ActionPreference]::SilentlyContinue
 
 [System.Version] $minimalSupportedSpotifyVersion = '1.1.73.517'
-[System.Version] $maximalSupportedSpotifyVersion = '1.1.79.763'
 
 function Get-File
 {
@@ -53,7 +48,7 @@ function Get-File
 
   if ($useBitTransfer)
   {
-    Write-Information -MessageData ''
+    Write-Information -MessageData 'Using a fallback BitTransfer method since you are running Windows PowerShell'
     Start-BitsTransfer -Source $Uri -Destination "$($TargetFile.FullName)"
   }
   else
@@ -99,10 +94,6 @@ function Test-SpotifyVersion
     [ValidateNotNullOrEmpty()]
     [System.Version]
     $MinimalSupportedVersion,
-    [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
-    [ValidateNotNullOrEmpty()]
-    [System.Version]
-    $MaximalSupportedVersion,
     [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName)]
     [System.Version]
     $TestedVersion
@@ -110,11 +101,23 @@ function Test-SpotifyVersion
 
   process
   {
-    return ($MinimalSupportedVersion.CompareTo($TestedVersion) -le 0) -and ($MaximalSupportedVersion.CompareTo($TestedVersion) -ge 0)
+    return ($MinimalSupportedVersion.CompareTo($TestedVersion) -le 0)
   }
 }
 
+Write-Host @'
+*****************
+@mrpond message:
+#Thailand #ThaiProtest #ThailandProtest #freeYOUTH
+Please retweet these hashtag, help me stop dictator government!
+*****************
+'@
 
+Write-Host @'
+*****************
+Authors: @Nuzair46, @KUTlime
+*****************
+'@
 
 $spotifyDirectory = Join-Path -Path $env:APPDATA -ChildPath 'Spotify'
 $spotifyExecutable = Join-Path -Path $spotifyDirectory -ChildPath 'Spotify.exe'
@@ -122,21 +125,22 @@ $spotifyApps = Join-Path -Path $spotifyDirectory -ChildPath 'Apps'
 
 [System.Version] $actualSpotifyClientVersion = (Get-ChildItem -LiteralPath $spotifyExecutable -ErrorAction:SilentlyContinue).VersionInfo.ProductVersionRaw
 
-
+Write-Host "Stopping Spotify...`n"
 Stop-Process -Name Spotify
 Stop-Process -Name SpotifyWebHelper
 
 if ($PSVersionTable.PSVersion.Major -ge 7)
 {
-  Import-Module Appx -UseWindowsPowerShell
+  Import-Module Appx -UseWindowsPowerShell -SkipEditionCheck
 }
 
 if (Get-AppxPackage -Name SpotifyAB.SpotifyMusic)
 {
-  Write-Host "The Microsoft Store version of Spotify has been detected, please delete it then try again.`n"
+  Write-Host "The Microsoft Store version of Spotify has been detected which is not supported.`n"
 
   if ($UninstallSpotifyStoreEdition)
   {
+    Write-Host "Uninstalling Spotify.`n"
     Get-AppxPackage -Name SpotifyAB.SpotifyMusic | Remove-AppxPackage
   }
   else
@@ -150,7 +154,7 @@ Push-Location -LiteralPath $env:TEMP
 try
 {
   # Unique directory name based on time
-  New-Item -Type Directory -Name "missme.cc-$(Get-Date -UFormat '%Y-%m-%d_%H-%M-%S')" |
+  New-Item -Type Directory -Name "BlockTheSpot-$(Get-Date -UFormat '%Y-%m-%d_%H-%M-%S')" |
   Convert-Path |
   Set-Location
 }
@@ -161,7 +165,7 @@ catch
   exit
 }
 
-
+Write-Host "Downloading latest patch (chrome_elf.zip)...`n"
 $elfPath = Join-Path -Path $PWD -ChildPath 'chrome_elf.zip'
 try
 {
@@ -178,11 +182,11 @@ Expand-Archive -Force -LiteralPath "$elfPath" -DestinationPath $PWD
 Remove-Item -LiteralPath "$elfPath" -Force
 
 $spotifyInstalled = Test-Path -LiteralPath $spotifyExecutable
-$unsupportedClientVersion = ($actualSpotifyClientVersion | Test-SpotifyVersion -MinimalSupportedVersion $minimalSupportedSpotifyVersion -MaximalSupportedVersion $maximalSupportedSpotifyVersion) -eq $false
+$unsupportedClientVersion = ($actualSpotifyClientVersion | Test-SpotifyVersion -MinimalSupportedVersion $minimalSupportedSpotifyVersion) -eq $false
 
 if (-not $UpdateSpotify -and $unsupportedClientVersion)
 {
-  if ((Read-Host -Prompt 'Your spotify requires an update, Would you like to continue? (Y/N)') -ne 'y')
+  if ((Read-Host -Prompt 'In order to install Block the Spot, your Spotify client must be updated. Do you want to continue? (Y/N)') -ne 'y')
   {
     exit
   }
@@ -190,6 +194,7 @@ if (-not $UpdateSpotify -and $unsupportedClientVersion)
 
 if (-not $spotifyInstalled -or $UpdateSpotify -or $unsupportedClientVersion)
 {
+  Write-Host 'Downloading the latest Spotify full setup, please wait...'
   $spotifySetupFilePath = Join-Path -Path $PWD -ChildPath 'SpotifyFullSetup.exe'
   try
   {
@@ -210,15 +215,17 @@ if (-not $spotifyInstalled -or $UpdateSpotify -or $unsupportedClientVersion)
   if ($isUserAdmin)
   {
     Write-Host
-    Write-Host 'starting...'
+    Write-Host 'Creating scheduled task...'
     $apppath = 'powershell.exe'
     $taskname = 'Spotify install'
     $action = New-ScheduledTaskAction -Execute $apppath -Argument "-NoLogo -NoProfile -Command & `'$spotifySetupFilePath`'"
     $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date)
     $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -WakeToRun
     Register-ScheduledTask -Action $action -Trigger $trigger -TaskName $taskname -Settings $settings -Force | Write-Verbose
+    Write-Host 'The install task has been scheduled. Starting the task...'
     Start-ScheduledTask -TaskName $taskname
     Start-Sleep -Seconds 2
+    Write-Host 'Unregistering the task...'
     Unregister-ScheduledTask -TaskName $taskname -Confirm:$false
     Start-Sleep -Seconds 2
   }
@@ -254,7 +261,7 @@ if (-not $spotifyInstalled -or $UpdateSpotify -or $unsupportedClientVersion)
   }
 
 
-
+  Write-Host 'Stopping Spotify...Again'
 
   Stop-Process -Name Spotify
   Stop-Process -Name SpotifyWebHelper
@@ -267,6 +274,7 @@ if ((Test-Path $elfDllBackFilePath) -eq $false)
   Move-Item -LiteralPath "$elfBackFilePath" -Destination "$elfDllBackFilePath" | Write-Verbose
 }
 
+Write-Host 'Patching Spotify...'
 $patchFiles = (Join-Path -Path $PWD -ChildPath 'chrome_elf.dll'), (Join-Path -Path $PWD -ChildPath 'config.ini')
 
 Copy-Item -LiteralPath $patchFiles -Destination "$spotifyDirectory"
@@ -299,11 +307,11 @@ if ($RemoveAdPlaceholder)
     Copy-Item -LiteralPath $xpuiUnpackedPath -Destination "$xpuiUnpackedPath.bak"
     $xpuiContents = Get-Content -LiteralPath $xpuiUnpackedPath -Raw
 
-    Write-Host 'Error...';
+    Write-Host 'Spicetify detected - You may need to reinstall BTS after running "spicetify apply".';
   }
   else
   {
-    Write-Host 'Error...'
+    Write-Host 'Could not find xpui.js, please open an issue on the BlockTheSpot repository.'
   }
 
   if ($xpuiContents)
@@ -316,7 +324,7 @@ if ($RemoveAdPlaceholder)
     $xpuiContents = $xpuiContents -replace '\.createElement\([^.,{]+,{(?:spec:[^.,]+,)?onClick:[^.,]+,className:[^.]+\.[^.]+\.UpgradeButton}\),[^.(]+\(\)', ''
 
     # Disable Premium NavLink button
-    $xpuiContents = $xpuiContents -replace 'const .=.\?`.*?`:.;return .\(\)\.createElement\(".",.\(\)\(\{\},.,\{ref:.,href:.,target:"_blank",rel:"noopener nofollow"\}\),.\)', ''
+    $xpuiContents = $xpuiContents -replace '(const|var) .=.\?(`.*?`|"".concat\(.\).concat\(.\)):.;return .\(\)\.createElement\(".",.\(\)\(\{\},.,\{ref:.,href:.,target:"_blank",rel:"noopener nofollow"\}\),.\)', ''
 
     if ($fromZip)
     {
@@ -336,7 +344,7 @@ if ($RemoveAdPlaceholder)
 }
 else
 {
-  
+  Write-Host "Won't remove ad placeholder and upgrade button.`n"
 }
 
 $tempDirectory = $PWD
@@ -344,11 +352,15 @@ Pop-Location
 
 Remove-Item -LiteralPath $tempDirectory -Recurse
 
-Write-Host 'Finished!'
+Write-Host 'Patching Complete, starting Spotify...'
 
 Start-Process -WorkingDirectory $spotifyDirectory -FilePath $spotifyExecutable
-
+Write-Host 'Done.'
 
 Write-Host @'
-Thank you for using missme.cc!
+*****************
+@mrpond message:
+#Thailand #ThaiProtest #ThailandProtest #freeYOUTH
+Please retweet these hashtag, help me stop dictator government!
+*****************
 '@
